@@ -276,7 +276,7 @@ def employee_dashboard():
             end_time=None,
             duration=None,
             user_id=user.id,
-            assigned_by=None  # Employee added their own project
+            assigned_by=None  # Employee added their own project.
         )
 
         db.session.add(new_project)
