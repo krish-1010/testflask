@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+body {
+    font-family: 'Poppins', sans-serif;
+    margin: 0;
+    padding: 0;
+    background: linear-gradient(to right, #2c3e50, #4ca1af);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+.container {
+    width: 90%;
+    max-width: 900px;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(15px);
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    text-align: center;
+    color: white;
+}
+
+h1, h2 {
+    font-weight: bold;
+}
+
+.logout {
+    display: inline-block;
+    text-decoration: none;
+    background: #ff4d4d;
+    color: white;
+    padding: 10px 15px;
+    border-radius: 8px;
+    transition: 0.3s;
+}
+
+.logout:hover {
+    background: #cc0000;
+    transform: scale(1.05);
+}
+
+table {
+    width: 100%;
+    margin-top: 20px;
+    border-collapse: collapse;
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+th, td {
+    padding: 12px;
+    text-align: left;
+    color: white;
+}
+
+th {
+    background: #007BFF;
+    text-transform: uppercase;
+}
+
+tr:nth-child(even) {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.btn {
+    text-decoration: none;
+    background: #28a745;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 8px;
+    transition: 0.3s;
+    display: inline-block;
+}
+
+.btn:hover {
+    background: #218838;
+    transform: scale(1.05);
+}
+
+.btn-danger {
+    background: #dc3545;
+}
+
+.btn-danger:hover {
+    background: #c82333;
+}
+
+.input, button {
+    padding: 8px;
+    margin: 5px 0;
+    border-radius: 5px;
+    border: none;
+    font-size: 16px;
+}
+
+input {
+    width: 90%;
+}
+
+button {
+    cursor: pointer;
+}
+
+/* Custom styling for file upload */
+.file-upload {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#fileName {
+    color: #f1c40f;
+    font-size: 14px;
+}
+
+/* Styling for the upload icon */
+.file-upload label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+}
+
+.file-upload i {
+    font-size: 20px;
+    color: #3498db;
+    transition: color 0.3s;
+}
+
+.file-upload label:hover i {
+    color: #2980b9;
+}
+
+/* Hide default file input button */
+input[type="file"] {
+    display: none;
+}
+
+    </style>
+</head>
+<body>
+
+
+    <div class="container">
+        <h1>Welcome, {{ user.name }}</h1>
+        <p>User ID: {{ user.id }}</p>
+        <a class="logout" href="{{ url_for('logout') }}">Logout</a>
+    
+        <h2>Your Projects</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Status</th>
+                    <th>Start Time</th>
+                    <th>End Time</th>
+                    <th>Duration</th>
+                    <th>Deadline</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for project in projects %}
+                <tr>
+                    <td>
+                        {{ project.title }}
+                        {% if project.assigned_by %}
+                            <span class="assigned-by-admin">(Assigned by Admin)</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if project.status == 'complete' %}
+                            <span style="color: green;">Completed ✅</span>
+                        {% elif project.status == 'reassigned' %}
+                            <span style="color: red;">Reassigned by Admin</span>
+                        {% elif project.status == 'pending_review' %}
+                            <span style="color: orange;">Pending Review</span>
+                        {% elif project.status == 'doing' %}
+                            <span style="color: orange;">Working On</span>
+                        {% elif project.end_time is none and project.deadline and project.deadline.date() < current_date %}
+                            <span style="color: red;">Overdue</span>
+                        {% else %}
+                            {{ project.status }}
+                        {% endif %}
+                    </td>
+                    <td>{{ project.start_time.strftime('%Y-%m-%d %H:%M:%S') if project.start_time else 'Not Started' }}</td>
+                    <td>{{ project.end_time.strftime('%Y-%m-%d %H:%M:%S') if project.end_time else 'Not Set' }}</td>
+                    <!-- Calculate Duration in Hours and Minutes -->
+                    <td>
+                    {% if project.start_time and project.end_time %}
+                    {% set duration = (project.end_time - project.start_time).total_seconds() / 60 %}
+                    {% set hours = duration // 60 %}
+                    {% set minutes = duration % 60 %}
+                    {{ "%.2f" | format(hours) }} hours {{ "%.2f" | format(minutes) }} mins
+                    {% else %}
+                    {{ "Not Set" }}
+                    {% endif %}
+                    </td>
+                    <td>{{ project.deadline }}</td>
+                    <td>
+                        {% if project.start_time is none %}
+                            <a class="btn" href="{{ url_for('start_project', project_id=project.id) }}">Start</a>
+                        {% elif project.end_time is none %}
+                            <form action="{{ url_for('submit_project', project_id=project.id) }}" method="POST" enctype="multipart/form-data" style="display:inline;">
+                                <div class="file-upload">
+                                    <input type="file" name="file" id="fileInput_{{ project.id }}" required style="display:none;">
+                                    <label for="fileInput_{{ project.id }}" class="btn btn-primary">Browse</label>
+                                    <span id="fileName_{{ project.id }}">No file chosen</span>
+                                </div>
+                                <button type="submit" class="btn btn-success">Submit File</button>
+                            </form>
+                        {% elif project.status == 'pending_review' %}
+                            <span style="color: orange;">Pending Review</span>
+                        {% elif project.status == 'complete' %}
+                            <span style="color: green;">Completed ✅</span>
+                        {% elif project.status == 'reassigned' %}
+                            <span style="color: red;">Reassigned by Admin</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <h2>Add Your Own Project</h2>
+        <form method="POST" action="{{ url_for('employee_dashboard') }}">
+            <label>Project Title:</label>
+            <input type="text" name="title" placeholder="Enter project title" required><br>
+        
+            <label>Project Deadline:</label>
+            <input type="date" name="deadline" required><br>
+        
+            <button type="submit" class="btn">Add Project</button>
+        </form>
+    </div>
+    
+    <script>
+        document.querySelectorAll('input[type="file"]').forEach(input => {
+            input.addEventListener('change', function() {
+                var projectId = this.id.split('_')[1];
+                var fileName = this.files[0] ? this.files[0].name : "No file chosen";
+                document.getElementById('fileName_' + projectId).textContent = fileName;
+            });
+        });
+    
+        document.querySelectorAll('form').forEach(form => {
+            form.addEventListener('submit', function() {
+                var projectId = this.querySelector('input[type="file"]').id.split('_')[1];
+                document.getElementById('fileName_' + projectId).textContent = "No file chosen"; // Reset file name
+            });
+        });
+    </script>
+    
+    </body>
+    </html>

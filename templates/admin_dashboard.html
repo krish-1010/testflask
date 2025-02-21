@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(to right, #2c3e50, #4ca1af);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            flex-direction: column;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 900px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(15px);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            color: white;
+        }
+
+        h1, h2 {
+            font-weight: bold;
+        }
+
+        .table-container {
+            max-height: 400px;
+            overflow-y: auto;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            color: white;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        th {
+            background: #007BFF;
+            text-transform: uppercase;
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+
+        .btn {
+            text-decoration: none;
+            background: #28a745;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            transition: 0.3s;
+            display: inline-block;
+        }
+
+        .btn:hover {
+            background: #218838;
+            transform: scale(1.05);
+        }
+
+        .btn-danger {
+            background: #dc3545;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        #performanceModal {
+            display: none;
+            position: fixed;
+            top: 10%;
+            left: 50%;
+            transform: translate(-50%, 0);
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.3);
+            width: 60%;
+            max-width: 600px;
+            height: auto;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+
+        #performanceModal canvas {
+            max-width: 100%;
+            height: 300px;
+        }
+
+        #searchEmployee {
+    width: 100%;
+    max-width: 300px;
+    padding: 8px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    font-size: 16px;
+    text-align: center;
+}
+/* Top Employees Section */
+.top-employees-container {
+    position: absolute;
+    top: 20px;
+    right: 20px;  /* Moved to the right */
+    width: 260px;
+    z-index: 1000;
+}
+
+.top-employees {
+    background: linear-gradient(135deg, #1e3c72, #2a5298); /* Deep blue gradient */
+    padding: 12px;
+    border-radius: 12px;
+    text-align: center;
+    color: #f1c40f; /* Gold text */
+    font-weight: bold;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.top-employees:hover {
+    background: linear-gradient(135deg, #243B55, #517fa4);
+    transform: scale(1.05);
+}
+
+.top-employees h3 {
+    margin: 0;
+    font-size: 18px;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* Employee List */
+#topEmployeesList {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    margin-top: 10px;
+    padding: 10px;
+    list-style: none;
+    display: none;
+    text-align: left;
+}
+
+#topEmployeesList li {
+    padding: 8px;
+    color: white;
+    font-size: 14px;
+    font-weight: bold;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    margin: 5px 0;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.emp-name {
+    color: #f1c40f; /* Gold */
+}
+
+.emp-details {
+    color: #1abc9c; /* Teal */
+}
+
+.emp-time {
+    color: #e74c3c; /* Red for urgency */
+}
+
+
+
+    </style>
+</head>
+<body>
+
+    <div class="welcome">Welcome, {{ admin_name }}</div>
+    <h1>Admin Dashboard</h1>
+    <input type="text" id="searchEmployee" placeholder="Search Employees..." onkeyup="searchEmployees()">
+    <div class="top-employees-container">
+        <div class="top-employees" onclick="toggleTopEmployees()">
+            <h3>🏆 Top Employees</h3>
+        </div>
+        <ul id="topEmployeesList">
+            {% for emp in top_employees[:3] %}
+                <li>⭐ <span class="emp-name">{{ emp.name }}</span> - <span class="emp-details">{{ emp.projects }} projects</span> (⏳ Avg: <span class="emp-time">{{ "%.2f"|format(emp.avg_time) }} hrs</span>)</li>
+            {% endfor %}
+        </ul>
+    </div>
+    
+    
+    
+
+    
+    <div class="table-container">
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>Employee Name</th>
+                    <th>Email</th>
+                    <th>Projects Completed</th>
+                    <th>Projects Pending</th>
+                    <th>Projects Working On</th>
+                    <th>Projects Overdue</th>
+                    <th>Time Spent</th>
+                    <th>Projects</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for employee in employee_data %}
+                <tr>
+                    <td><strong>{{ employee.name }}</strong></td>
+                    <td>{{ employee.email }}</td>
+                    <td>{{ employee.projects_done }}</td>
+                    <td>{{ employee.projects_pending }}</td>
+                    <td>{{ employee.projects_doing }}</td>
+                    <td>{{ employee.projects_overdue }}</td> 
+                    <td>
+                        {% for project in employee.projects %}
+                        {% if project.start_time and project.end_time %}
+                        {% set total_minutes = project.calculate_duration() %}
+                        {% set hours = (total_minutes // 60) %}
+                        {% set minutes = (total_minutes % 60) %}
+                        <p>{{ project.title }} - {{ hours }} hours {{ minutes }} minutes</p>
+                    {% else %}
+                        <p>{{ project.title }} - Duration not available</p>
+                    {% endif %}
+                        {% endfor %}
+                    </td>
+                    <td>
+                        {% for project in employee.projects %}
+                            <p>{{ project.title }} - <b>{{ project.status }}</b></p>
+                            {% if project.status == 'pending_review' %}
+                                <div class="project-actions">
+                                    <a href="{{ url_for('download_file', filename=project.file_path) }}" class="btn btn-primary">📥 Download</a>
+                                    <form action="{{ url_for('review_project', project_id=project.id, action='approve') }}" method="POST">
+                                        <button type="submit" class="btn btn-success">✅ Approve</button>
+                                    </form>
+                                    <form action="{{ url_for('review_project', project_id=project.id, action='reject') }}" method="POST">
+                                        <button type="submit" class="btn btn-danger">❌ Reject</button>
+                                    </form>
+                                </div>
+                            {% elif project.status == 'complete' %}
+                                <span style="color: green; font-weight: bold;">✅ Completed</span>
+                            {% elif project.status == 'reassigned' %}
+                                <span style="color: red; font-weight: bold;">❗ Reassigned to Employee</span>
+                            {% endif %}
+                        {% endfor %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('assign_project', employee_id=employee.id) }}" class="btn btn-primary">Assign Project</a>
+                        <button class="btn btn-info view-performance" data-employee-id="{{ employee.id }}">📊 View Performance</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div id="performanceModal">
+        <div id="performanceModalBody"></div>
+        <button onclick="document.getElementById('performanceModal').style.display='none'">Close</button>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            document.querySelectorAll(".view-performance").forEach(button => {
+                button.addEventListener("click", function () {
+                    let employeeId = this.getAttribute("data-employee-id");
+                    
+                    // Redirect instead of using fetch
+                    window.location.href = `/employee_performance/${employeeId}`;
+                });
+            });
+        });
+    </script>
+    <script>
+        function searchEmployees() {
+            let input = document.getElementById("searchEmployee").value.toLowerCase();
+            let table = document.querySelector("table tbody");
+            let rows = table.getElementsByTagName("tr");
+        
+            for (let i = 0; i < rows.length; i++) {
+                let nameColumn = rows[i].getElementsByTagName("td")[0]; // Assuming Employee Name is in the first column
+                if (nameColumn) {
+                    let nameText = nameColumn.textContent || nameColumn.innerText;
+                    if (nameText.toLowerCase().includes(input)) {
+                        rows[i].style.display = "";
+                    } else {
+                        rows[i].style.display = "none";
+                    }
+                }
+            }
+        }
+        </script>
+        <script>
+            function toggleTopEmployees() {
+                let list = document.getElementById("topEmployeesList");
+                list.style.display = (list.style.display === "none" || list.style.display === "") ? "block" : "none";
+            }
+        </script>
+        
+        
+</body>
+</html>
