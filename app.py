@@ -10,6 +10,9 @@ import os
 import random
 #import pandas as pd
 from werkzeug.utils import secure_filename
+import sys
+print("Python version:", sys.version)
+
 
 
 app = Flask(__name__)
