@@ -89,7 +89,7 @@ class Project(db.Model):
         if self.start_time and self.end_time:
             # Duration in minutes
             return (self.end_time - self.start_time).total_seconds() / 60
-        return 0  # Return 0 if duration cannot be calculated
+        return 0  # Return 0 if duration cannot be calculatedd
 
     # Update duration when the project is done
     def update_duration(self):
